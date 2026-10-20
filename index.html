@@ -1,0 +1,1726 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Генератор промптов для преподавателя колледжа</title>
+    <meta
+      name="description"
+      content="Локальный веб-инструмент для преподавателей IT-дисциплин колледжа по сборке структурированных промптов практических и лабораторных работ."
+    />
+    <meta property="og:title" content="Генератор промптов для преподавателя колледжа" />
+    <meta
+      property="og:description"
+      content="Локальный веб-инструмент для преподавателей IT-дисциплин колледжа по сборке структурированных промптов практических и лабораторных работ."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <style>
+      :root {
+        --bg-canvas: #f8fafc;
+        --bg-surface: #ffffff;
+        --bg-subtle: #f1f5f9;
+        --bg-navy: #1e293b;
+        --bg-navy-deep: #0f172a;
+        --primary: #2563eb;
+        --primary-hover: #1d4ed8;
+        --primary-soft: #eff6ff;
+        --primary-border: #bfdbfe;
+        --text-main: #0f172a;
+        --text-secondary: #334155;
+        --text-muted: #64748b;
+        --border-color: #e2e8f0;
+        --border-strong: #cbd5e1;
+        --warning-bg: #fffbeb;
+        --warning-border: #fde68a;
+        --warning-text: #92400e;
+        --success-bg: #f0fdf4;
+        --success-border: #bbf7d0;
+        --success-text: #166534;
+        --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+        --radius-card: 16px;
+        --radius-control: 10px;
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: var(--font-sans);
+        background-color: var(--bg-canvas);
+        color: var(--text-main);
+        line-height: 1.55;
+        font-size: 16px;
+        overflow-x: hidden;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* Top Bar (3-zone contract) */
+      .topbar {
+        background-color: var(--bg-navy);
+        color: #ffffff;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .topbar-inner {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .brand-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-decoration: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        letter-spacing: -0.01em;
+      }
+
+      .topbar-nav {
+        display: none;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .topbar-nav a {
+        color: #cbd5e1;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 6px 0;
+        border-bottom: 2px solid transparent;
+        transition: color 150ms ease, border-color 150ms ease;
+      }
+
+      .topbar-nav a:hover,
+      .topbar-nav a:focus-visible {
+        color: #ffffff;
+        border-bottom-color: #60a5fa;
+        outline: none;
+      }
+
+      .topbar-action {
+        flex-shrink: 0;
+      }
+
+      .btn-preset-top {
+        min-height: 40px;
+        padding: 8px 12px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 150ms ease, transform 120ms ease;
+      }
+
+      .btn-preset-top:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+      }
+
+      .btn-preset-top:focus-visible {
+        outline: 2px solid #93c5fd;
+        outline-offset: 2px;
+      }
+
+      /* Main Container & Hero Intro */
+      .container {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 20px 16px 56px;
+      }
+
+      .hero-banner {
+        background-color: var(--bg-navy);
+        color: #ffffff;
+        border-radius: var(--radius-card);
+        padding: 24px 20px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .hero-kicker {
+        font-size: 0.82rem;
+        color: #93c5fd;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+      }
+
+      .hero-title {
+        margin: 0;
+        font-size: clamp(1.45rem, 3vw, 2.1rem);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        line-height: 1.22;
+        text-wrap: balance;
+      }
+
+      .hero-subtitle {
+        margin: 0;
+        font-size: 0.96rem;
+        color: #cbd5e1;
+        max-width: 72ch;
+      }
+
+      .preset-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .preset-label {
+        font-size: 0.82rem;
+        color: #94a3b8;
+        margin-right: 4px;
+      }
+
+      .preset-btn {
+        min-height: 38px;
+        padding: 6px 12px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        color: #e2e8f0;
+        background-color: rgba(15, 23, 42, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 8px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 150ms ease, border-color 150ms ease;
+      }
+
+      .preset-btn:hover {
+        background-color: rgba(37, 99, 235, 0.35);
+        border-color: #60a5fa;
+        color: #ffffff;
+      }
+
+      .preset-btn:focus-visible {
+        outline: 2px solid #60a5fa;
+        outline-offset: 2px;
+      }
+
+      /* Workspace Grid */
+      .workspace-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        align-items: start;
+      }
+
+      .card {
+        background-color: var(--bg-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-card);
+        padding: 20px;
+        box-shadow: var(--shadow-card);
+      }
+
+      .card-header {
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .card-title {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--bg-navy);
+        letter-spacing: -0.01em;
+      }
+
+      .card-meta {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Form Elements */
+      .form-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .form-row-2col {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+
+      .field-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .field-label {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--bg-navy);
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .field-hint {
+        font-size: 0.8rem;
+        font-weight: 400;
+        color: var(--text-muted);
+      }
+
+      .input-control,
+      .select-control,
+      .textarea-control {
+        width: 100%;
+        min-height: 46px;
+        padding: 10px 14px;
+        font-family: var(--font-sans);
+        font-size: 0.96rem;
+        color: var(--text-main);
+        background-color: #ffffff;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-control);
+        transition: border-color 150ms ease, box-shadow 150ms ease;
+      }
+
+      .textarea-control {
+        min-height: 104px;
+        resize: vertical;
+        line-height: 1.5;
+      }
+
+      .input-control:focus,
+      .select-control:focus,
+      .textarea-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+      }
+
+      .input-control::placeholder,
+      .textarea-control::placeholder {
+        color: #94a3b8;
+      }
+
+      .custom-lang-wrap {
+        margin-top: 8px;
+        display: none;
+      }
+
+      .custom-lang-wrap.is-visible {
+        display: block;
+      }
+
+      /* Segmented Radio Control for Difficulty */
+      .segmented-fieldset {
+        border: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .segmented-group {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        background-color: var(--bg-subtle);
+        padding: 5px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+      }
+
+      .segment-option {
+        position: relative;
+      }
+
+      .segment-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+      }
+
+      .segment-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 8px 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        border-radius: 8px;
+        cursor: pointer;
+        user-select: none;
+        text-align: center;
+        white-space: nowrap;
+        transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+      }
+
+      .segment-option input[type="radio"]:checked + .segment-label {
+        background-color: var(--primary);
+        color: #ffffff;
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.28);
+      }
+
+      .segment-option input[type="radio"]:focus-visible + .segment-label {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Number Stepper for Variants */
+      .number-stepper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .stepper-btn {
+        min-width: 46px;
+        min-height: 46px;
+        background-color: var(--bg-subtle);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-control);
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--bg-navy);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 150ms ease, border-color 150ms ease;
+      }
+
+      .stepper-btn:hover {
+        background-color: #e2e8f0;
+      }
+
+      .stepper-btn:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      .number-stepper .input-control {
+        text-align: center;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Checkboxes / Optional Sections */
+      .options-fieldset {
+        border: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 6px;
+      }
+
+      .checkbox-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-height: 48px;
+        padding: 12px 14px;
+        background-color: var(--bg-canvas);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-control);
+        cursor: pointer;
+        transition: background-color 150ms ease, border-color 150ms ease;
+      }
+
+      .checkbox-card:hover {
+        background-color: var(--primary-soft);
+        border-color: var(--primary-border);
+      }
+
+      .checkbox-card input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        flex-shrink: 0;
+        accent-color: var(--primary);
+        cursor: pointer;
+      }
+
+      .checkbox-text-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .checkbox-title {
+        font-size: 0.93rem;
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .checkbox-desc {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      /* Primary & Secondary Buttons */
+      .actions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 4px;
+      }
+
+      .btn-primary {
+        flex: 1 1 220px;
+        min-height: 48px;
+        padding: 12px 20px;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        font-weight: 600;
+        color: #ffffff;
+        background-color: var(--primary);
+        border: none;
+        border-radius: var(--radius-control);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.24);
+        transition: background-color 150ms ease, transform 120ms ease;
+      }
+
+      .btn-primary:hover {
+        background-color: var(--primary-hover);
+      }
+
+      .btn-primary:active {
+        transform: scale(0.99);
+      }
+
+      .btn-primary:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      .btn-secondary {
+        flex: 1 1 150px;
+        min-height: 46px;
+        padding: 10px 16px;
+        font-family: var(--font-sans);
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--bg-navy);
+        background-color: var(--bg-subtle);
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-control);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
+        transition: background-color 150ms ease, border-color 150ms ease;
+      }
+
+      .btn-secondary:hover {
+        background-color: #e2e8f0;
+      }
+
+      .btn-secondary:focus-visible {
+        outline: 2px solid var(--primary);
+        outline-offset: 2px;
+      }
+
+      /* Result Output Panel */
+      .output-card {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .prompt-textarea {
+        width: 100%;
+        min-height: 440px;
+        padding: 16px;
+        font-family: var(--font-mono);
+        font-size: 0.86rem;
+        line-height: 1.55;
+        color: var(--bg-navy-deep);
+        background-color: #f8fafc;
+        border: 1px solid var(--border-strong);
+        border-radius: var(--radius-control);
+        resize: vertical;
+      }
+
+      .prompt-textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+      }
+
+      .output-stats {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Bottom Section: Checklist & Warning Callout */
+      .bottom-sections {
+        margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .checklist-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .checklist-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 48px;
+        padding: 10px 14px;
+        background-color: var(--bg-canvas);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-control);
+        cursor: pointer;
+        transition: background-color 150ms ease, border-color 150ms ease;
+      }
+
+      .checklist-item:hover {
+        background-color: var(--primary-soft);
+        border-color: var(--primary-border);
+      }
+
+      .checklist-item.is-checked {
+        background-color: var(--success-bg);
+        border-color: var(--success-border);
+      }
+
+      .checklist-item input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        accent-color: #16a34a;
+        cursor: pointer;
+      }
+
+      .checklist-text {
+        font-size: 0.94rem;
+        font-weight: 500;
+        color: var(--text-main);
+        transition: color 150ms ease;
+      }
+
+      .checklist-item.is-checked .checklist-text {
+        color: var(--success-text);
+      }
+
+      .checklist-footer {
+        margin-top: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 0.88rem;
+        color: var(--text-secondary);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .btn-link-action {
+        min-height: 40px;
+        padding: 6px 12px;
+        background: transparent;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--bg-navy);
+        cursor: pointer;
+      }
+
+      .btn-link-action:hover {
+        background-color: var(--bg-subtle);
+      }
+
+      /* Warning Callout (No thick left accent border; uniform 1px border) */
+      .warning-callout {
+        background-color: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        border-radius: var(--radius-card);
+        padding: 18px 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        color: var(--warning-text);
+      }
+
+      .warning-icon {
+        width: 24px;
+        height: 24px;
+        flex-shrink: 0;
+        margin-top: 1px;
+        color: #d97706;
+      }
+
+      .warning-content {
+        font-size: 0.94rem;
+        line-height: 1.5;
+      }
+
+      .warning-content strong {
+        font-weight: 700;
+        display: block;
+        margin-bottom: 2px;
+      }
+
+      /* Toast Notification */
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        max-width: 400px;
+        margin: 0 auto;
+        background-color: var(--bg-navy-deep);
+        color: #ffffff;
+        padding: 14px 18px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.92rem;
+        font-weight: 500;
+        opacity: 0;
+        transform: translateY(12px);
+        pointer-events: none;
+        transition: opacity 180ms ease, transform 180ms ease;
+        z-index: 100;
+      }
+
+      .toast.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+
+      .page-footer {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 16px 16px 36px;
+        border-top: 1px solid var(--border-color);
+        font-size: 0.84rem;
+        color: var(--text-muted);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      @media (min-width: 640px) {
+        .topbar-inner {
+          gap: 24px;
+        }
+        .brand-title {
+          font-size: 1.05rem;
+        }
+        .btn-preset-top {
+          padding: 8px 14px;
+          font-size: 0.85rem;
+        }
+        .container {
+          padding: 28px 24px 64px;
+        }
+        .card {
+          padding: 24px;
+        }
+        .form-row-2col {
+          grid-template-columns: 2fr 1fr;
+        }
+        .form-row-equal {
+          grid-template-columns: 1fr 1fr;
+        }
+        .toast {
+          left: auto;
+          margin: 0;
+        }
+      }
+
+      @media (min-width: 960px) {
+        .topbar-nav {
+          display: flex;
+        }
+        .workspace-grid {
+          grid-template-columns: 1.12fr 0.88fr;
+        }
+        .output-card {
+          position: sticky;
+          top: 20px;
+        }
+        .prompt-textarea {
+          min-height: 640px;
+        }
+        .checklist-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Navigation Bar (3-Zone Contract) -->
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a href="#top" class="brand-title">Генератор промптов колледжа</a>
+        <nav class="topbar-nav" aria-label="Основная навигация">
+          <a href="#params-section">Параметры</a>
+          <a href="#result-section">Результат</a>
+          <a href="#checklist-section">Чек-лист</a>
+          <a href="#security-notice">Безопасность</a>
+        </nav>
+        <div class="topbar-action">
+          <button type="button" id="btn-fill-demo" class="btn-preset-top">
+            Заполнить пример
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="top" class="container">
+      <!-- Hero Banner with Quick Topic Presets -->
+      <section class="hero-banner" aria-labelledby="page-heading">
+        <div class="hero-kicker">Методический инструмент преподавателя IT-дисциплин · Локальная сборка без API</div>
+        <h1 id="page-heading" class="hero-title">
+          Конструктор промптов для практических и лабораторных работ
+        </h1>
+        <p class="hero-subtitle">
+          Настройте параметры занятия, локальные предметные области и состав методического пакета — инструмент мгновенно соберёт структурированный промпт для языковой модели.
+        </p>
+        <div class="preset-bar" role="group" aria-label="Быстрые шаблоны занятий">
+          <span class="preset-label">Быстрый шаблон:</span>
+          <button type="button" class="preset-btn" data-preset="oop">
+            ООП · C# (2 курс)
+          </button>
+          <button type="button" class="preset-btn" data-preset="python">
+            Алгоритмы и списки · Python (1 курс)
+          </button>
+          <button type="button" class="preset-btn" data-preset="java">
+            Коллекции и исключения · Java (3 курс)
+          </button>
+        </div>
+      </section>
+
+      <!-- Main Two-Column Workspace -->
+      <div class="workspace-grid">
+        <!-- Left Column: Input Parameters Form -->
+        <section id="params-section" class="card" aria-labelledby="form-heading">
+          <div class="card-header">
+            <h2 id="form-heading" class="card-title">1. Входные параметры задания</h2>
+            <span class="card-meta">Все поля редактируемы</span>
+          </div>
+
+          <form id="prompt-form" class="form-stack" novalidate>
+            <!-- Discipline & Course -->
+            <div class="form-row-2col">
+              <div class="field-group">
+                <label for="discipline-input" class="field-label">
+                  <span>Дисциплина</span>
+                </label>
+                <input
+                  type="text"
+                  id="discipline-input"
+                  class="input-control"
+                  value="Объектно-ориентированное программирование"
+                  placeholder="Например: Объектно-ориентированное программирование"
+                  required
+                />
+              </div>
+
+              <div class="field-group">
+                <label for="course-select" class="field-label">
+                  <span>Курс</span>
+                </label>
+                <select id="course-select" class="select-control" aria-label="Курс обучения">
+                  <option value="1">1 курс</option>
+                  <option value="2" selected>2 курс</option>
+                  <option value="3">3 курс</option>
+                  <option value="4">4 курс</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Lesson Topic -->
+            <div class="field-group">
+              <label for="topic-input" class="field-label">
+                <span>Тема занятия</span>
+                <span class="field-hint">Конкретный раздел программы</span>
+              </label>
+              <input
+                type="text"
+                id="topic-input"
+                class="input-control"
+                value="Наследование, полиморфизм и абстрактные классы"
+                placeholder="Например: Инкапсуляция, свойства и конструкторы классов"
+                required
+              />
+            </div>
+
+            <!-- Learning Outcomes -->
+            <div class="field-group">
+              <label for="outcomes-input" class="field-label">
+                <span>Планируемые результаты обучения</span>
+                <span class="field-hint">3–4 строки</span>
+              </label>
+              <textarea
+                id="outcomes-input"
+                class="textarea-control"
+                rows="4"
+                placeholder="Опишите, какие практические навыки должен продемонстрировать студент (например: создать базовый и производные классы, переопределить методы расчёта, обработать массив объектов)..."
+              >Студент умеет проектировать иерархию классов, переопределять виртуальные методы в производных классах, использовать абстрактные классы и применять полиморфизм при обработке коллекций объектов.</textarea>
+            </div>
+
+            <!-- Programming Language & Variants Count -->
+            <div class="form-row-2col form-row-equal">
+              <div class="field-group">
+                <label for="language-select" class="field-label">
+                  <span>Язык программирования</span>
+                </label>
+                <select id="language-select" class="select-control">
+                  <option value="C#" selected>C#</option>
+                  <option value="Java">Java</option>
+                  <option value="Python">Python</option>
+                  <option value="C++">C++</option>
+                  <option value="Другой">Другой</option>
+                </select>
+                <div id="custom-lang-container" class="custom-lang-wrap">
+                  <label for="custom-lang-input" class="field-hint" style="display:block; margin-bottom:4px;">
+                    Укажите язык или стек:
+                  </label>
+                  <input
+                    type="text"
+                    id="custom-lang-input"
+                    class="input-control"
+                    placeholder="Например: JavaScript, Kotlin, Go, SQL"
+                  />
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="variants-input" class="field-label">
+                  <span>Число вариантов</span>
+                  <span class="field-hint">От 1 до 10</span>
+                </label>
+                <div class="number-stepper">
+                  <button
+                    type="button"
+                    id="btn-var-dec"
+                    class="stepper-btn"
+                    aria-label="Уменьшить число вариантов"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    id="variants-input"
+                    class="input-control"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value="3"
+                  />
+                  <button
+                    type="button"
+                    id="btn-var-inc"
+                    class="stepper-btn"
+                    aria-label="Увеличить число вариантов"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Difficulty Level (Segmented Radio Control) -->
+            <fieldset class="segmented-fieldset">
+              <legend class="field-label" style="margin-bottom: 6px;">
+                <span>Уровень сложности</span>
+              </legend>
+              <div class="segmented-group" role="radiogroup" aria-label="Уровень сложности задания">
+                <div class="segment-option">
+                  <input
+                    type="radio"
+                    name="difficulty"
+                    id="diff-basic"
+                    value="Базовый"
+                  />
+                  <label for="diff-basic" class="segment-label">Базовый</label>
+                </div>
+                <div class="segment-option">
+                  <input
+                    type="radio"
+                    name="difficulty"
+                    id="diff-medium"
+                    value="Средний"
+                    checked
+                  />
+                  <label for="diff-medium" class="segment-label">Средний</label>
+                </div>
+                <div class="segment-option">
+                  <input
+                    type="radio"
+                    name="difficulty"
+                    id="diff-advanced"
+                    value="Повышенный"
+                  />
+                  <label for="diff-advanced" class="segment-label">Повышенный</label>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Local Domains -->
+            <div class="field-group">
+              <label for="domains-input" class="field-label">
+                <span>Локальные предметные области</span>
+                <span class="field-hint">Через запятую для распределения по вариантам</span>
+              </label>
+              <input
+                type="text"
+                id="domains-input"
+                class="input-control"
+                value="Кофейня, прокат самокатов в Алматы, курьерская доставка"
+                placeholder="Кофейня, прокат самокатов в Алматы, курьерская доставка"
+              />
+            </div>
+
+            <!-- Optional Sections Checkboxes -->
+            <fieldset class="options-fieldset">
+              <legend class="field-label">
+                <span>Опциональные секции промпта</span>
+                <span class="field-hint">Включаются в структуру ТЗ</span>
+              </legend>
+              <div class="options-list">
+                <label class="checkbox-card" for="opt-starter-code">
+                  <input type="checkbox" id="opt-starter-code" checked />
+                  <span class="checkbox-text-wrap">
+                    <span class="checkbox-title">Стартовый код с TODO и одной намеренной скрытой ошибкой</span>
+                    <span class="checkbox-desc">Каркас программы с местами для доработки и логическим багом для отладки</span>
+                  </span>
+                </label>
+
+                <label class="checkbox-card" for="opt-tests">
+                  <input type="checkbox" id="opt-tests" checked />
+                  <span class="checkbox-text-wrap">
+                    <span class="checkbox-title">Набор из 3–5 тестов / входных данных</span>
+                    <span class="checkbox-desc">Стандартные, граничные и некорректные наборы данных с ожидаемым выводом</span>
+                  </span>
+                </label>
+
+                <label class="checkbox-card" for="opt-questions">
+                  <input type="checkbox" id="opt-questions" checked />
+                  <span class="checkbox-text-wrap">
+                    <span class="checkbox-title">Вопросы для устной защиты кода (по 3 на каждый вариант)</span>
+                    <span class="checkbox-desc">Проверка самостоятельности написания и понимания архитектуры</span>
+                  </span>
+                </label>
+
+                <label class="checkbox-card" for="opt-rubric">
+                  <input type="checkbox" id="opt-rubric" checked />
+                  <span class="checkbox-text-wrap">
+                    <span class="checkbox-title">Универсальная рубрика оценивания на 10 баллов (5 критериев × 2 балла)</span>
+                    <span class="checkbox-desc">Прозрачная шкала оценивания (0 / 1 / 2 балла по каждому из 5 критериев)</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+
+            <!-- Generate CTA Button -->
+            <div class="actions-row">
+              <button type="submit" id="btn-generate" class="btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                <span>Сформировать промпт</span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Right Column: Generated Prompt Output & Actions -->
+        <section id="result-section" class="card output-card" aria-labelledby="result-heading">
+          <div class="card-header" style="margin-bottom: 4px;">
+            <h2 id="result-heading" class="card-title">2. Готовый промпт для ИИ</h2>
+            <span id="output-status-meta" class="card-meta">Готов к копированию</span>
+          </div>
+
+          <div class="output-stats" id="prompt-metrics" aria-live="polite">
+            <span id="metric-variants">Вариантов: 3</span>
+            <span aria-hidden="true">·</span>
+            <span id="metric-sections">Доп. секций: 4 из 4</span>
+            <span aria-hidden="true">·</span>
+            <span id="metric-chars">Символов: 0</span>
+          </div>
+
+          <label for="prompt-output" class="field-hint" style="margin-top: -4px;">
+            Вы можете скопировать текст целиком или отредактировать детали прямо в поле ниже:
+          </label>
+          <textarea
+            id="prompt-output"
+            class="prompt-textarea"
+            aria-label="Сформированный промпт для языковой модели"
+            spellcheck="false"
+          ></textarea>
+
+          <div class="actions-row">
+            <button type="button" id="btn-copy" class="btn-primary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span>Скопировать в буфер</span>
+            </button>
+
+            <button type="button" id="btn-download" class="btn-secondary">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Скачать .txt</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Additional Blocks Below Generator -->
+      <div class="bottom-sections">
+        <!-- Teacher Verification Checklist Card -->
+        <section id="checklist-section" class="card" aria-labelledby="checklist-heading">
+          <div class="card-header">
+            <h2 id="checklist-heading" class="card-title">
+              Чек-лист преподавателя перед выдачей
+            </h2>
+            <span id="checklist-progress" class="card-meta">Проверено: 0 из 5</span>
+          </div>
+
+          <div class="checklist-grid" role="group" aria-labelledby="checklist-heading">
+            <label class="checklist-item" for="chk-1">
+              <input type="checkbox" id="chk-1" class="teacher-check" />
+              <span class="checklist-text">Код запускается, и логика тестов работает корректно.</span>
+            </label>
+
+            <label class="checklist-item" for="chk-2">
+              <input type="checkbox" id="chk-2" class="teacher-check" />
+              <span class="checklist-text">Сложность ТЗ строго соответствует заявленному уровню и теме.</span>
+            </label>
+
+            <label class="checklist-item" for="chk-3">
+              <input type="checkbox" id="chk-3" class="teacher-check" />
+              <span class="checklist-text">В требованиях к вариантам нет скрытых неоднозначностей.</span>
+            </label>
+
+            <label class="checklist-item" for="chk-4">
+              <input type="checkbox" id="chk-4" class="teacher-check" />
+              <span class="checklist-text">Критерии оценивания прозрачны и совпадают с рубрикой.</span>
+            </label>
+
+            <label class="checklist-item" for="chk-5">
+              <input type="checkbox" id="chk-5" class="teacher-check" />
+              <span class="checklist-text">Вопросы для защиты проверяют понимание написанного студентом кода.</span>
+            </label>
+          </div>
+
+          <div class="checklist-footer">
+            <span id="checklist-status-text">
+              Отметьте все 5 пунктов после вычитки сгенерированных ИИ вариантов.
+            </span>
+            <button type="button" id="btn-toggle-all-checks" class="btn-link-action">
+              Отметить все пункты
+            </button>
+          </div>
+        </section>
+
+        <!-- Security & Privacy Warning Callout -->
+        <aside id="security-notice" class="warning-callout" role="note" aria-label="Предупреждение о защите персональных данных">
+          <svg class="warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <div class="warning-content">
+            <strong>Информационная безопасность и академическая верификация</strong>
+            Не передавайте в сторонние ИИ персональные данные студентов (ФИО, оценки, личные работы). Материалы перед выдачей обязательно верифицируются преподавателем.
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="page-footer">
+      <span>Генератор промптов для преподавателя колледжа · Автономная версия (Local JS)</span>
+      <span>Без серверной части и внешних API</span>
+    </footer>
+
+    <!-- Accessible Toast Notification -->
+    <div id="toast-notification" class="toast" role="status" aria-live="polite">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>
+      <span id="toast-message">Промпт скопирован в буфер обмена!</span>
+    </div>
+
+    <script>
+      (function () {
+        // DOM References
+        const form = document.getElementById('prompt-form');
+        const disciplineInput = document.getElementById('discipline-input');
+        const courseSelect = document.getElementById('course-select');
+        const topicInput = document.getElementById('topic-input');
+        const outcomesInput = document.getElementById('outcomes-input');
+        const languageSelect = document.getElementById('language-select');
+        const customLangContainer = document.getElementById('custom-lang-container');
+        const customLangInput = document.getElementById('custom-lang-input');
+        const variantsInput = document.getElementById('variants-input');
+        const btnVarDec = document.getElementById('btn-var-dec');
+        const btnVarInc = document.getElementById('btn-var-inc');
+        const domainsInput = document.getElementById('domains-input');
+
+        const optStarterCode = document.getElementById('opt-starter-code');
+        const optTests = document.getElementById('opt-tests');
+        const optQuestions = document.getElementById('opt-questions');
+        const optRubric = document.getElementById('opt-rubric');
+
+        const promptOutput = document.getElementById('prompt-output');
+        const outputStatusMeta = document.getElementById('output-status-meta');
+        const metricVariants = document.getElementById('metric-variants');
+        const metricSections = document.getElementById('metric-sections');
+        const metricChars = document.getElementById('metric-chars');
+
+        const btnCopy = document.getElementById('btn-copy');
+        const btnDownload = document.getElementById('btn-download');
+        const btnFillDemo = document.getElementById('btn-fill-demo');
+        const presetButtons = document.querySelectorAll('.preset-btn');
+
+        const teacherChecks = document.querySelectorAll('.teacher-check');
+        const checklistProgress = document.getElementById('checklist-progress');
+        const checklistStatusText = document.getElementById('checklist-status-text');
+        const btnToggleAllChecks = document.getElementById('btn-toggle-all-checks');
+
+        const toastEl = document.getElementById('toast-notification');
+        const toastMessage = document.getElementById('toast-message');
+        let toastTimer = null;
+
+        // Preset Templates for Quick Testing
+        const PRESETS = {
+          oop: {
+            discipline: 'Объектно-ориентированное программирование',
+            course: '2',
+            topic: 'Наследование, полиморфизм и абстрактные классы',
+            outcomes:
+              'Студент умеет проектировать иерархию классов, переопределять виртуальные методы в производных классах, использовать абстрактные классы и применять полиморфизм при обработке коллекций объектов.',
+            language: 'C#',
+            customLang: '',
+            difficulty: 'Средний',
+            variants: 3,
+            domains: 'Кофейня, прокат самокатов в Алматы, курьерская доставка',
+          },
+          python: {
+            discipline: 'Основы алгоритмизации и программирования',
+            course: '1',
+            topic: 'Списки, словари и функции обработки табличных данных',
+            outcomes:
+              'Студент умеет структурировать данные с помощью списков и словарей Python, писать чистые функции с параметрами, выполнять фильтрацию, агрегацию и поиск экстремальных значений без использования сторонних библиотек.',
+            language: 'Python',
+            customLang: '',
+            difficulty: 'Базовый',
+            variants: 4,
+            domains: 'Библиотечный абонемент колледжа, учёт заказов в пекарне, расписание автобусных маршрутов, городской велопрокат',
+          },
+          java: {
+            discipline: 'Разработка корпоративных приложений',
+            course: '3',
+            topic: 'Обобщённые коллекции (Generics), интерфейсы и обработка пользовательских исключений',
+            outcomes:
+              'Студент умеет применять коллекции List/Map с параметризацией типов, проектировать собственные классы исключений, выполнять потокобезопасную валидацию бизнес-правил и разделять логику на сервисный слой и модель.',
+            language: 'Java',
+            customLang: '',
+            difficulty: 'Повышенный',
+            variants: 5,
+            domains: 'Складской учёт маркетплейса, система бронирования аудиторий, сервис каршеринга в Астане, учёт заявок техподдержки, терминал оплаты парковки',
+          },
+        };
+
+        function showToast(message) {
+          toastMessage.textContent = message;
+          toastEl.classList.add('is-visible');
+          if (toastTimer) {
+            clearTimeout(toastTimer);
+          }
+          toastTimer = setTimeout(function () {
+            toastEl.classList.remove('is-visible');
+          }, 2800);
+        }
+
+        function getSelectedDifficulty() {
+          const checked = document.querySelector('input[name="difficulty"]:checked');
+          return checked ? checked.value : 'Средний';
+        }
+
+        function setSelectedDifficulty(value) {
+          const radios = document.querySelectorAll('input[name="difficulty"]');
+          radios.forEach(function (radio) {
+            radio.checked = radio.value === value;
+          });
+        }
+
+        function clampVariants(val) {
+          const parsed = Math.round(Number(val));
+          if (Number.isNaN(parsed)) return 3;
+          return Math.min(10, Math.max(1, parsed));
+        }
+
+        function parseDomains(raw) {
+          const list = (raw || '')
+            .split(/[,;\n]+/)
+            .map(function (item) {
+              return item.trim();
+            })
+            .filter(Boolean);
+          if (list.length === 0) {
+            return ['Кофейня', 'Прокат самокатов в Алматы', 'Курьерская доставка'];
+          }
+          return list;
+        }
+
+        function buildPromptText() {
+          const discipline =
+            disciplineInput.value.trim() || 'Объектно-ориентированное программирование';
+          const course = courseSelect.value || '2';
+          const topic =
+            topicInput.value.trim() ||
+            'Практическое применение основных конструкций языка программирования';
+          const outcomes =
+            outcomesInput.value.trim() ||
+            'Применение изученных синтаксических и архитектурных конструкций для решения прикладной задачи.';
+
+          const selectedLang = languageSelect.value;
+          const effectiveLang =
+            selectedLang === 'Другой'
+              ? customLangInput.value.trim() || 'Указанный преподавателем язык программирования'
+              : selectedLang;
+
+          const difficulty = getSelectedDifficulty();
+          const variantsCount = clampVariants(variantsInput.value);
+          variantsInput.value = String(variantsCount);
+
+          const domainsList = parseDomains(domainsInput.value);
+
+          const difficultyDescriptions = {
+            'Базовый':
+              'Базовый уровень: фокус на базовом синтаксисе, чётком пошаговом алгоритме, минимальной вложенности (1–2 класса/модуля), понятных типах данных и предсказуемых входных значениях.',
+            'Средний':
+              'Средний уровень: продуманная архитектура из нескольких взаимосвязанных сущностей, валидация входных данных, обработка типичных граничных случаев и чистая декомпозиция.',
+            'Повышенный':
+              'Повышенный уровень: расширенная архитектура с интерфейсами/абстракциями, обработка нестандартных сценариев и исключений, оптимизация логики и повышенные требования к расширяемости кода.',
+          };
+
+          const variantDistribution = [];
+          for (let i = 0; i < variantsCount; i++) {
+            const domainName = domainsList[i % domainsList.length];
+            const extraNote =
+              i >= domainsList.length
+                ? ' (модификация сценария №' + (Math.floor(i / domainsList.length) + 1) + ')'
+                : '';
+            variantDistribution.push(
+              '- Вариант №' + (i + 1) + ': предметная область «' + domainName + '»' + extraNote
+            );
+          }
+
+          const conditionalBlocks = [];
+          let secNum = 1;
+
+          if (optStarterCode.checked) {
+            conditionalBlocks.push(
+              '4.' +
+                secNum +
+                '. СТАРТОВЫЙ КОД С TODO И ОДНОЙ НАМЕРЕННОЙ СКРЫТОЙ ОШИБКОЙ:\n' +
+                'Для каждого варианта подготовь компактный стартовый шаблон кода на языке ' +
+                effectiveLang +
+                ', который:\n' +
+                '- содержит каркас основных структур/классов и комментарии // TODO в местах, которые студент должен дописать самостоятельно;\n' +
+                '- включает ровно ОДНУ намеренную скрытую логическую или граничную ошибку (не синтаксическую — код должен запускаться, но выдавать неверный результат на одном из проверочных сценариев);\n' +
+                '- в отдельном блоке «Ответы для преподавателя» кратко укажи, где именно в каждом варианте заложена скрытая ошибка и как её исправить.'
+            );
+            secNum++;
+          }
+
+          if (optTests.checked) {
+            conditionalBlocks.push(
+              '4.' +
+                secNum +
+                '. НАБОР ИЗ 3–5 ТЕСТОВ / ВХОДНЫХ ДАННЫХ:\n' +
+                'Для каждого варианта приведи таблицу или список из 3–5 тестовых сценариев:\n' +
+                '- 2 стандартных (нормальных) набора входных данных с точным ожидаемым результатом;\n' +
+                '- 1–2 граничных случая (нулевые, предельные значения, пустые списки);\n' +
+                '- 1 сценарий с некорректным вводом или сценарий, на котором проявляется скрытая ошибка.'
+            );
+            secNum++;
+          }
+
+          if (optQuestions.checked) {
+            conditionalBlocks.push(
+              '4.' +
+                secNum +
+                '. ВОПРОСЫ ДЛЯ УСТНОЙ ЗАЩИТЫ КОДА (ПО 3 НА КАЖДЫЙ ВАРИАНТ):\n' +
+                'Для каждого варианта сформулируй ровно 3 контрольных вопроса для устной защиты:\n' +
+                '- Вопрос 1: на проверку понимания потока выполнения и предметной логики собственного кода;\n' +
+                '- Вопрос 2: «Что изменится в работе программы, если изменить условие X или структуру данных Y?»;\n' +
+                '- Вопрос 3: на обоснование применённых механизмов языка ' +
+                effectiveLang +
+                ' по теме «' +
+                topic +
+                '».'
+            );
+            secNum++;
+          }
+
+          if (optRubric.checked) {
+            conditionalBlocks.push(
+              '4.' +
+                secNum +
+                '. УНИВЕРСАЛЬНАЯ РУБРИКА ОЦЕНИВАНИЯ НА 10 БАЛЛОВ (5 КРИТЕРИЕВ × 2 БАЛЛА):\n' +
+                'Сформируй единую прозрачную таблицу оценивания (максимум 10 баллов), где каждый из 5 критериев оценивается в 0, 1 или 2 балла:\n' +
+                '1) Полнота реализации функциональных требований варианта (0–2 балла);\n' +
+                '2) Корректность применения инструментов темы «' +
+                topic +
+                '» на языке ' +
+                effectiveLang +
+                ' (0–2 балла);\n' +
+                '3) Обнаружение скрытой ошибки и успешное прохождение всех 3–5 тестов (0–2 балла);\n' +
+                '4) Читаемость, архитектура, именование переменных/методов и чистота кода (0–2 балла);\n' +
+                '5) Устная защита работы и ответы на 3 контрольных вопроса (0–2 балла).'
+            );
+            secNum++;
+          }
+
+          const optionalSectionString =
+            conditionalBlocks.length > 0
+              ? '4. ОБЯЗАТЕЛЬНЫЕ ДОПОЛНИТЕЛЬНЫЕ СЕКЦИИ ДЛЯ КАЖДОГО ВАРИАНТА\n' +
+                conditionalBlocks.join('\n\n')
+              : '4. ДОПОЛНИТЕЛЬНЫЕ СЕКЦИИ\nСформируй только условие задачи, требования к реализации и формат входных/выходных данных для каждого варианта (без стартового кода, тестовых наборов, вопросов защиты и рубрики).';
+
+          const lines = [
+            '# СИСТЕМНЫЙ ПРОМПТ: РАЗРАБОТКА ПРАКТИЧЕСКОГО ЗАДАНИЯ ДЛЯ СТУДЕНТОВ КОЛЛЕДЖА',
+            '',
+            '1. РОЛЬ И КОНТЕКСТ',
+            'Ты — опытный преподаватель-методист профильных IT-дисциплин в колледже и практикующий разработчик.',
+            'Твоя задача — подготовить методически выверенное практическое задание для студентов с индивидуальными вариантами.',
+            '',
+            '2. ПАРАМЕТРЫ УЧЕБНОГО ЗАНЯТИЯ',
+            '- Дисциплина: ' + discipline,
+            '- Курс обучения: ' + course + ' курс колледжа',
+            '- Тема занятия: ' + topic,
+            '- Язык программирования: ' + effectiveLang,
+            '- Уровень сложности: ' + difficulty,
+            '- Ориентир сложности: ' +
+              (difficultyDescriptions[difficulty] || difficultyDescriptions['Средний']),
+            '- Число вариантов: ' + variantsCount,
+            '- Планируемые результаты обучения:',
+            '  ' + outcomes,
+            '',
+            '3. ИНДИВИДУАЛИЗАЦИЯ И ЛОКАЛЬНЫЕ ПРЕДМЕТНЫЕ ОБЛАСТИ',
+            'Распредели указанные предметные области по вариантам, чтобы задачи опирались на понятный студентам реальный контекст:',
+            variantDistribution.join('\n'),
+            'Все варианты должны быть строго равнозначны по сложности и объёму кода, но отличаться сущностями, бизнес-правилами и расчётными формулами.',
+            '',
+            optionalSectionString,
+            '',
+            '5. СТРОГИЕ ОГРАНИЧЕНИЯ И ФОРМАТ ОФОРМЛЕНИЯ',
+            '- НЕ давай студентам готовое решение целиком: основную реализацию студент обязан написать самостоятельно.',
+            '- НЕ используй персональные данные реальных людей (ФИО студентов, телефоны, ИИН, адреса) — применяй исключительно нейтральные учебные данные.',
+            '- Оформи итоговые варианты в виде понятных структурированных карточек и сводной таблицы, удобных для раздачи студентам.',
+          ];
+
+          const finalPrompt = lines.join('\n');
+          promptOutput.value = finalPrompt;
+
+          const activeOptsCount = [
+            optStarterCode.checked,
+            optTests.checked,
+            optQuestions.checked,
+            optRubric.checked,
+          ].filter(Boolean).length;
+
+          metricVariants.textContent = 'Вариантов: ' + variantsCount;
+          metricSections.textContent = 'Доп. секций: ' + activeOptsCount + ' из 4';
+          metricChars.textContent = 'Символов: ' + finalPrompt.length;
+        }
+
+        // Toggle Custom Language Field
+        function syncCustomLanguageVisibility() {
+          if (languageSelect.value === 'Другой') {
+            customLangContainer.classList.add('is-visible');
+          } else {
+            customLangContainer.classList.remove('is-visible');
+          }
+        }
+
+        languageSelect.addEventListener('change', function () {
+          syncCustomLanguageVisibility();
+          buildPromptText();
+        });
+
+        customLangInput.addEventListener('input', function () {
+          buildPromptText();
+        });
+
+        // Variants Stepper Handlers
+        btnVarDec.addEventListener('click', function () {
+          const current = clampVariants(variantsInput.value);
+          variantsInput.value = String(Math.max(1, current - 1));
+          buildPromptText();
+        });
+
+        btnVarInc.addEventListener('click', function () {
+          const current = clampVariants(variantsInput.value);
+          variantsInput.value = String(Math.min(10, current + 1));
+          buildPromptText();
+        });
+
+        variantsInput.addEventListener('change', function () {
+          variantsInput.value = String(clampVariants(variantsInput.value));
+          buildPromptText();
+        });
+
+        // Form Submit ("Сформировать промпт")
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          buildPromptText();
+          outputStatusMeta.textContent = 'Обновлено только что';
+          showToast('Промпт успешно сформирован!');
+        });
+
+        // Live Update on Checkbox or Radio Change
+        const liveControls = [
+          optStarterCode,
+          optTests,
+          optQuestions,
+          optRubric,
+          courseSelect,
+        ];
+        liveControls.forEach(function (ctrl) {
+          ctrl.addEventListener('change', function () {
+            buildPromptText();
+          });
+        });
+
+        document.querySelectorAll('input[name="difficulty"]').forEach(function (radio) {
+          radio.addEventListener('change', function () {
+            buildPromptText();
+          });
+        });
+
+        // Update character counter if teacher manually edits output textarea
+        promptOutput.addEventListener('input', function () {
+          metricChars.textContent = 'Символов: ' + promptOutput.value.length;
+          outputStatusMeta.textContent = 'Изменено вручную';
+        });
+
+        // Apply Preset Helper
+        function applyPreset(presetKey) {
+          const data = PRESETS[presetKey];
+          if (!data) return;
+          disciplineInput.value = data.discipline;
+          courseSelect.value = data.course;
+          topicInput.value = data.topic;
+          outcomesInput.value = data.outcomes;
+          languageSelect.value = data.language;
+          customLangInput.value = data.customLang;
+          syncCustomLanguageVisibility();
+          setSelectedDifficulty(data.difficulty);
+          variantsInput.value = String(data.variants);
+          domainsInput.value = data.domains;
+          optStarterCode.checked = true;
+          optTests.checked = true;
+          optQuestions.checked = true;
+          optRubric.checked = true;
+          buildPromptText();
+          outputStatusMeta.textContent = 'Шаблон загружен';
+          showToast('Загружен шаблон: ' + data.discipline);
+        }
+
+        presetButtons.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            const key = btn.getAttribute('data-preset');
+            applyPreset(key);
+          });
+        });
+
+        btnFillDemo.addEventListener('click', function () {
+          applyPreset('oop');
+        });
+
+        // Copy to Clipboard
+        btnCopy.addEventListener('click', function () {
+          const textToCopy = promptOutput.value;
+          if (!textToCopy) {
+            buildPromptText();
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard
+              .writeText(promptOutput.value)
+              .then(function () {
+                outputStatusMeta.textContent = 'Скопировано в буфер';
+                showToast('Промпт скопирован в буфер обмена!');
+              })
+              .catch(function () {
+                fallbackCopy();
+              });
+          } else {
+            fallbackCopy();
+          }
+        });
+
+        function fallbackCopy() {
+          const tempArea = document.createElement('textarea');
+          tempArea.value = promptOutput.value;
+          tempArea.setAttribute('readonly', '');
+          tempArea.style.position = 'fixed';
+          tempArea.style.top = '-9999px';
+          document.body.appendChild(tempArea);
+          tempArea.select();
+          try {
+            document.execCommand('copy');
+            outputStatusMeta.textContent = 'Скопировано в буфер';
+            showToast('Промпт скопирован в буфер обмена!');
+          } catch (err) {
+            showToast('Выделите текст и нажмите Ctrl+C');
+          }
+          document.body.removeChild(tempArea);
+        }
+
+        // Download .txt
+        btnDownload.addEventListener('click', function () {
+          if (!promptOutput.value) {
+            buildPromptText();
+          }
+          const content = promptOutput.value;
+          const course = courseSelect.value || '2';
+          const safeDiscipline = (disciplineInput.value.trim() || 'zanyatie')
+            .toLowerCase()
+            .replace(/[^a-zа-яё0-9]+/gi, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 40);
+          const filename = 'prompt-' + (safeDiscipline || 'it-college') + '-' + course + '-kurs.txt';
+
+          const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setTimeout(function () {
+            URL.revokeObjectURL(url);
+          }, 1000);
+          outputStatusMeta.textContent = 'Файл ' + filename + ' скачан';
+          showToast('Файл ' + filename + ' сохранён!');
+        });
+
+        // Teacher Checklist Interactivity
+        function updateChecklistState() {
+          let checkedCount = 0;
+          teacherChecks.forEach(function (chk) {
+            const label = chk.closest('.checklist-item');
+            if (chk.checked) {
+              checkedCount++;
+              if (label) label.classList.add('is-checked');
+            } else {
+              if (label) label.classList.remove('is-checked');
+            }
+          });
+          const total = teacherChecks.length;
+          checklistProgress.textContent = 'Проверено: ' + checkedCount + ' из ' + total;
+          if (checkedCount === total) {
+            checklistStatusText.textContent =
+              'Все 5 критериев верифицированы — задание готово к выдаче студентам.';
+            btnToggleAllChecks.textContent = 'Сбросить отметки';
+          } else {
+            checklistStatusText.textContent =
+              'Отметьте все 5 пунктов после вычитки сгенерированных ИИ вариантов.';
+            btnToggleAllChecks.textContent = 'Отметить все пункты';
+          }
+        }
+
+        teacherChecks.forEach(function (chk) {
+          chk.addEventListener('change', updateChecklistState);
+        });
+
+        btnToggleAllChecks.addEventListener('click', function () {
+          const allChecked = Array.from(teacherChecks).every(function (c) {
+            return c.checked;
+          });
+          teacherChecks.forEach(function (c) {
+            c.checked = !allChecked;
+          });
+          updateChecklistState();
+        });
+
+        // Initial Prompt Build on Page Load
+        syncCustomLanguageVisibility();
+        buildPromptText();
+        updateChecklistState();
+      })();
+    </script>
+  </body>
+</html>
